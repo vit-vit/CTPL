@@ -32,9 +32,9 @@ Sample usage
 
 <code>p.push(first);  // function</code>
 
-<code>p.push( &#91;&#93; (int id){  // lambda
+<code>p.push( &#91;&#93; (int id){
   std::cout << "hello from " << id << '\n';
-});</code>
+});  // lambda</code>
 
 <code>struct Second {
     void operator()(int id) const {
