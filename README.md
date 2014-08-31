@@ -32,7 +32,7 @@ Sample usage
 
 <code>p.push(first);  // function</code>
 
-<code>p.push( &lsqb; &lbrack; &rsqb; &rbrack; (int id){  // lambda
+<code>p.push( &#91;&#93; (int id){  // lambda
   std::cout << "hello from " << id << '\n';
 });</code>
 
