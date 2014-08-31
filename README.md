@@ -14,7 +14,7 @@ Features:
 - standard c++ language, tested to compile on MS Visual Studio 2013 (2012?), gcc 4.8.2 and mingw 4.8.1(with posix threads)
 - simple but effiecient solution, one header only, no need to compile a binary library
 - query the number of idle threads and resize the pool dynamically
-- one API to push to the thread pool any collable object: lambdas, functors, functions, result of bind expression ?
+- one API to push to the thread pool any collable object: lambdas, functors, functions, result of bind expression
 - automatic template argument deduction
 - get returned value of any type with standard c++ futures
 - get fired exceptions with standard c++ futures
@@ -24,28 +24,28 @@ Features:
 
 Sample usage
 
-<syntaxhighlight lang="cpp">
-ctpl::thread_pool p(2 /* two threads in the pool */);
+<code>ctpl::thread_pool p(2 /* two threads in the pool */);</code>
 
+<code>
 void first(int id) {
     std::cout << "hello from " << id << '\n';
 }
+</code>
 
-p.push(first);  // function
+<code>p.push(first);  // function</code>
 
-p.push([](int id){  // lambda
+<code>p.push([](int id){  // lambda
   std::cout << "hello from " << id << '\n';
-});
+});</code>
 
-struct Second {
+<code>struct Second {
     void operator()(int id) const {
         std::cout << "hello from " << id << '\n';
     }
-};
+};</code>
 
-Second second;
-p.move(std::ref(second));  // functor, reference
-p.push(second);  // functor, copy ctor
-p.move(std::move(second));  // functor, move ctor
-</syntaxhighlight>
+<code>Second second;</code>
+<code>p.move(std::ref(second));  // functor, reference</code>
+<code>p.push(second);  // functor, copy ctor</code>
+<code>p.move(std::move(second));  // functor, move ctor</code>
 
