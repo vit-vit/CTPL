@@ -26,26 +26,21 @@ Sample usage
 
 <code>ctpl::thread_pool p(2 /* two threads in the pool */);</code>
 
-<code>
-void first(int id) {
+<code>void first(int id) {
     std::cout << "hello from " << id << '\n';
-}
-</code>
+}</code>
 
 <code>p.push(first);  // function</code>
 
-<code>p.push([=](int id){  // lambda
+<code>p.push( [ ] (int id){  // lambda
   std::cout << "hello from " << id << '\n';
 });</code>
 
-<code>struct Second {
-    void operator()(int id) const {
-        std::cout << "hello from " << id << '\n';
-    }
-};</code>
-
-
-<code>Second second;</code>
+<code>struct Second {<br/>
+    void operator()(int id) const {<br/>
+        std::cout << "hello from " << id << '\n';<br/>
+    }<br/>
+} second;</code>
 
 <code>p.move(std::ref(second));  // functor, reference</code>
 
