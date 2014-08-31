@@ -32,19 +32,19 @@ Sample usage
 
 <code>p.push(first);  // function</code>
 
-<code>p.push( [ ] (int id){  // lambda
+<code>p.push( &lsqb; &lbrack; &rsqb; &rbrack; (int id){  // lambda
   std::cout << "hello from " << id << '\n';
 });</code>
 
-<code>struct Second {<br/>
-    void operator()(int id) const {<br/>
-        std::cout << "hello from " << id << '\n';<br/>
-    }<br/>
-} second;</code>
+<code>struct Second {
+    void operator()(int id) const {
+        std::cout << "hello from " << id << '\n';
+    }
+} second;
 
-<code>p.move(std::ref(second));  // functor, reference</code>
+<code>p.push(std::ref(second));  // functor, reference</code>
 
 <code>p.push(second);  // functor, copy ctor</code>
 
-<code>p.move(std::move(second));  // functor, move ctor</code>
+<code>p.push(std::move(second));  // functor, move ctor</code>
 
