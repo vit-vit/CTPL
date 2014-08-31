@@ -34,7 +34,7 @@ void first(int id) {
 
 <code>p.push(first);  // function</code>
 
-<code>p.push([](int id){  // lambda
+<code>p.push([=](int id){  // lambda
   std::cout << "hello from " << id << '\n';
 });</code>
 
@@ -44,8 +44,12 @@ void first(int id) {
     }
 };</code>
 
+
 <code>Second second;</code>
+
 <code>p.move(std::ref(second));  // functor, reference</code>
+
 <code>p.push(second);  // functor, copy ctor</code>
+
 <code>p.move(std::move(second));  // functor, move ctor</code>
 
