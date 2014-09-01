@@ -30,7 +30,9 @@ Sample usage
     std::cout << "hello from " << id << '\n';
 }</code>
 
-<code>p.push(first);  // function</code>
+<code>p.copy(first);  // function</code>
+
+<code>// your compiler may allow also &#160;&#160;&#160;&#160;&#160; p.push(first);  // function</code>
 
 <code>p.push( &#91;&#93; (int id){
   std::cout << "hello from " << id << '\n';
@@ -44,7 +46,9 @@ Sample usage
 
 <code>p.push(std::ref(second));  // functor, reference</code>
 
-<code>p.push(second);  // functor, copy ctor</code>
+<code>// your copiler may allow also &#160;&#160;&#160;&#160;&#160; p.push(second);  // functor, reference</code>
+
+<code>p.copy(second);  // functor, copy ctor</code>
 
 <code>p.push(std::move(second));  // functor, move ctor</code>
 
