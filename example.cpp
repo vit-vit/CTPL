@@ -4,35 +4,36 @@
 
 
 void first(int id) {
-    std::cout << "hello from " << id << '\n';
+    std::cout << "hello from " << id << ", function\n";
 }
 
-struct Second {
-    Second(const std::string & s) { this->s = s; }
-    //Second(Second &&) = delete;
-    //Second(const Second &) = delete;
-    void operator()(int id) const {
-        std::cout << "hello from " << id << ' ' << this->s << '\n';
-    }
-    
-private:
-    std::string s;
-};
-
-
 int main(int argc, char **argv) {
-    char * asd = new char();
+    //char * asd = new char();
     ctpl::thread_pool p(2 /* two threads in the pool */);
-    //p.move(first);  // function
-    p.push(first);  // function
 
-    Second second("functor");
-    p.move(std::ref(second));  // functor, reference
-    p.push(second);  // functor, copy ctor
-    p.move(std::move(second));  // functor, move ctor
+    p.copy(first);  // function
+    p.push(std::ref(first));  // function
+    //p.push(first);  // function. May not work for your compiler
+
+    struct Second {
+        Second(const std::string & s) { std::cout << "ctor\n"; this->s = s; }
+        Second(Second && c) { std::cout << "move ctor\n"; s = std::move(c.s); }
+        Second(const Second & c) { std::cout << "copy ctor\n"; this->s = c.s; };
+        void operator()(int id) const {
+            std::cout << "hello from " << id << ' ' << this->s << '\n';
+        }
+
+    private:
+        std::string s;
+    } second(", functor");
+
+    p.push(std::ref(second));  // functor, reference
+    p.copy(second);  // functor, copy ctor
+    //p.push(second);  // functor, reference. May not work for your compiler
+    p.push(std::move(second));  // functor, move ctor
     
-    std::string s = "lambda";
-    p.move([s](int id){  // lambda
+    std::string s = ", lambda";
+    p.push([s](int id){  // lambda
         std::cout << "hello from " << id << ' ' << s << '\n';
     });
     p.push([s](int id){  // lambda
@@ -48,14 +49,14 @@ int main(int argc, char **argv) {
     p.resize(1);
 
     std::string s2 = "result";
-    auto f1 = p.move([s2](int){
+    auto f1 = p.push([s2](int){
         return s2;
     });
     // other code here
     //...
     std::cout << "returned " << f1.get() << '\n';
 
-    auto f2 = p.move([](int){
+    auto f2 = p.push([](int){
         throw std::exception();
     });
     // other code here
