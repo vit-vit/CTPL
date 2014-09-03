@@ -19,7 +19,7 @@ Features:
 - get returned value of any type with standard c++ futures
 - get fired exceptions with standard c++ futures
 - use for any purpose under Apache license
-- depends only on Boost Lockfree Queue library, http://boost.org, which is a header only library as well
+- two versions, one depends on Boost Lockfree Queue library, http://boost.org, which is a header only library
 
 
 Sample usage
