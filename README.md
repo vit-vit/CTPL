@@ -29,31 +29,31 @@ Sample usage
     std::cout << "hello from " << id << '\n';
 }</code>
 
-<code>void third(int id, const std::string & additional_param) {}</code>
-
-
-<code>int main () {</code>
-
-<code>&#09;&#09;ctpl::thread_pool p(2 /* two threads in the pool */);</code>
-
-<code>&#09;&#09;p.push(first);  // function</code>
-
-<code>&#09;&#09;p.push(third, "additional_param");</code>
-
-<code>&#09;&#09;p.push( &#91;&#93; (int id){
-  std::cout << "hello from " << id << '\n';
-});  // lambda</code>
-
 <code>&#09;&#09;struct Second {
     void operator()(int id) const {
         std::cout << "hello from " << id << '\n';
     }
 } second;
 
-<code>&#09;&#09;p.push(std::ref(second));  // functor, reference</code>
+<code>void third(int id, const std::string & additional_param) {}</code>
 
-<code>&#09;&#09;p.push(const_cast&#60;const Second &&#62;(second));  // functor, copy ctor</code>
 
-<code>&#09;&#09;p.push(std::move(second));  // functor, move ctor</code>
+<code>int main () {</code>
+
+<code>&#09;&#09;&#09;&#09;ctpl::thread_pool p(2 /* two threads in the pool */);</code>
+
+<code>&#09;&#09;&#09;&#09;p.push(first);  // function</code>
+
+<code>&#09;&#09;&#09;&#09;p.push(third, "additional_param");</code>
+
+<code>&#09;&#09;&#09;&#09;p.push( &#91;&#93; (int id){
+  std::cout << "hello from " << id << '\n';
+});  // lambda</code>
+
+<code>&#09;&#09;&#09;&#09;p.push(std::ref(second));  // functor, reference</code>
+
+<code>&#09;&#09;&#09;&#09;p.push(const_cast&#60;const Second &&#62;(second));  // functor, copy ctor</code>
+
+<code>&#09;&#09;&#09;&#09;p.push(std::move(second));  // functor, move ctor</code>
 
 <code>}</code>
