@@ -15,6 +15,7 @@ Features:
 - simple but effiecient solution, one header only, no need to compile a binary library
 - query the number of idle threads and resize the pool dynamically
 - one API to push to the thread pool any collable object: lambdas, functors, functions, result of bind expression
+- collable objects with variadic number of parameters plus index of the thread running the object
 - automatic template argument deduction
 - get returned value of any type with standard c++ futures
 - get fired exceptions with standard c++ futures
@@ -24,15 +25,17 @@ Features:
 
 Sample usage
 
-<code>ctpl::thread_pool p(2 /* two threads in the pool */);</code>
-
 <code>void first(int id) {
     std::cout << "hello from " << id << '\n';
 }</code>
 
-<code>p.copy(first);  // function</code>
+<code>void third(int id, const std::string & additional_param) {}</code>
 
-<code>// your compiler may allow also &#160;&#160;&#160;&#160;&#160; p.push(first);  // function</code>
+<code>int main () {</code>
+<code>ctpl::thread_pool p(2 /* two threads in the pool */);</code>
+
+<code>p.push(first);  // function</code>
+<code>p.push(third, "additional_param");</code>
 
 <code>p.push( &#91;&#93; (int id){
   std::cout << "hello from " << id << '\n';
@@ -46,9 +49,7 @@ Sample usage
 
 <code>p.push(std::ref(second));  // functor, reference</code>
 
-<code>// your copiler may allow also &#160;&#160;&#160;&#160;&#160; p.push(second);  // functor, reference</code>
-
-<code>p.copy(second);  // functor, copy ctor</code>
+<code>p.push(const_cast<const Second &>(second));  // functor, copy ctor</code>
 
 <code>p.push(std::move(second));  // functor, move ctor</code>
-
+<code>}</code>
