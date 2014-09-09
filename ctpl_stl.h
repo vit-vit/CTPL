@@ -34,7 +34,7 @@
 
 
 // thread pool to run user's functors with signature
-//      ret func(int id)
+//      ret func(int id, other_params)
 // where id is the index of the thread that runs the functor
 // ret is some return type
 
@@ -57,7 +57,7 @@ namespace ctpl {
         int size() { return static_cast<int>(this->threads.size()); }
 
         // number of idle threads
-        int n_waiting() { return this->nWaiting; }
+        int n_idle() { return this->nWaiting; }
         std::thread & get_thread(int i) { return *this->threads[i]; }
 
         // change the number of threads in the pool
@@ -92,7 +92,7 @@ namespace ctpl {
         }
 
         // empty the queue
-        void empty() {
+        void clear_queue() {
             std::unique_lock<std::mutex> lock(this->mutex);
             while (!this->q.empty())
                 this->q.pop();  // empty the queue
@@ -120,7 +120,7 @@ namespace ctpl {
                 for (int i = 0, n = this->size(); i < n; ++i) {
                     *this->flags[i] = true;  // command the threads to stop
                 }
-                this->empty();  // empty the queue
+                this->clear_queue();  // empty the queue
             }
             else {
                 if (this->isDone || this->isStop)
@@ -137,44 +137,32 @@ namespace ctpl {
             }
             // if there were no threads in the pool but some functors in the queue, the functors are not deleted by the threads
             // therefore delete them here
-            this->empty();
+            this->clear_queue();
             this->threads.clear();
             this->flags.clear();
+        }
+
+        template<typename F, typename... Rest>
+        auto push(F && f, Rest&&... rest) ->std::future<decltype(f(0, rest...))> {
+            auto pck = std::make_shared<std::packaged_task<decltype(f(0, rest...))(int)>>(
+                std::bind(std::forward<F>(f), std::placeholders::_1, std::forward<Rest...>(rest...))
+            );
+
+            this->q.push([pck](int id) {
+                (*pck)(id);
+            });
+
+            std::unique_lock<std::mutex> lock(this->mutex);
+            this->cv.notify_one();
+
+            return pck->get_future();
         }
 
         // run the user's function that excepts argument int - id of the running thread. returned value is templatized
         // operator returns std::future, where the user can get the result and rethrow the catched exceptins
         template<typename F>
         auto push(F && f) ->std::future<decltype(f(0))> {
-            auto pck = std::make_shared<std::packaged_task<decltype(f(0))(int)>>(std::move(f));
-
-            this->q.push([pck](int id) {
-                (*pck)(id);
-            });
-
-            std::unique_lock<std::mutex> lock(this->mutex);
-            this->cv.notify_one();
-
-            return pck->get_future();
-        }
-
-        template<typename F>
-        auto push(F & f) ->std::future<decltype(f(0))> {
-            auto pck = std::make_shared<std::packaged_task<decltype(f(0))(int)>>(std::ref(f));
-
-            this->q.push([pck](int id) {
-                (*pck)(id);
-            });
-
-            std::unique_lock<std::mutex> lock(this->mutex);
-            this->cv.notify_one();
-
-            return pck->get_future();
-        }
-
-        template<typename F>
-        auto copy(F f) ->std::future<decltype(f(0))> {
-            auto pck = std::make_shared<std::packaged_task<decltype(f(0))(int)>>(f);
+            auto pck = std::make_shared<std::packaged_task<decltype(f(0))(int)>>(std::forward<F>(f));
 
             this->q.push([pck](int id) {
                 (*pck)(id);
