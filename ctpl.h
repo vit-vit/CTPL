@@ -150,11 +150,9 @@ namespace ctpl {
 
         template<typename F, typename... Rest>
         auto push(F && f, Rest&&... rest) ->std::future<decltype(f(0, rest...))> {
-            std::cout << "yes\n";
             auto pck = std::make_shared<std::packaged_task<decltype(f(0, rest...))(int)>>(
                 std::bind(std::forward<F>(f), std::placeholders::_1, std::forward<Rest...>(rest...))
             );
-            std::cout << "yes\n";
 
             auto _f = new std::function<void(int id)>([pck](int id) {
                 (*pck)(id);
