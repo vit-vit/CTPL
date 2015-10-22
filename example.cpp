@@ -1,6 +1,12 @@
-#include <ctpl.h>
+
+// Original by vit-vit
+// October 2015, Jonathan Hadida: edited, cf 'JH'
+
 #include <iostream>
 #include <string>
+#include <chrono>
+
+#include "ctpl_stl.h"
 
 
 
@@ -30,11 +36,11 @@ void ugu(int id, Third & t) {
 }
 
 int main(int argc, char **argv) {
-    ctpl::thread_pool p(2 /* two threads in the pool */);
+    ctpl::thread_pool pool(2 /* two threads in the pool */);
 
-    std::future<void> qw = p.push(std::ref(first));  // function
-    p.push(first);  // function
-    p.push(aga, 7);  // function
+    std::future<void> qw = pool.push(std::ref(first));  // function
+    pool.push(first);  // function
+    pool.push(aga, 7);  // function
 
     {
         struct Second {
@@ -49,56 +55,57 @@ int main(int argc, char **argv) {
             std::string s;
         } second(", functor");
 
-        p.push(std::ref(second));  // functor, reference
+        pool.push(std::ref(second));  // functor, reference
         std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-        p.push(const_cast<const Second &>(second));  // functor, copy ctor
-        p.push(std::move(second));  // functor, move ctor
-        p.push(second);  // functor, move ctor
-        p.push(Second(", functor"));  // functor, move ctor
+        pool.push(const_cast<const Second &>(second));  // functor, copy ctor
+        pool.push(std::move(second));  // functor, move ctor
+        pool.push(second);  // functor, move ctor
+        pool.push(Second(", functor"));  // functor, move ctor
     }
         {
             Third t(100);
 
-            p.push(ugu, std::ref(t));  // function. reference
-            p.push(ugu, t);  // function. copy ctor, move ctor
-            p.push(ugu, std::move(t));  // function. move ctor, move ctor
+            pool.push(ugu, std::ref(t));  // function. reference
+            pool.push(ugu, t);  // function. copy ctor, move ctor
+            pool.push(ugu, std::move(t));  // function. move ctor, move ctor
 
         }
-        p.push(ugu, Third(200));  // function
+        pool.push(ugu, Third(200));  // function
 
 
 
     std::string s = ", lambda";
-    p.push([s](int id){  // lambda
+    pool.push([s](int id){  // lambda
         std::this_thread::sleep_for(std::chrono::milliseconds(2000));
         std::cout << "hello from " << id << ' ' << s << '\n';
     });
 
-    p.push([s](int id){  // lambda
+    pool.push([s](int id){  // lambda
         std::this_thread::sleep_for(std::chrono::milliseconds(2000));
         std::cout << "hello from " << id << ' ' << s << '\n';
     });
 
-    p.push(mmm, "worked");
+    pool.push(mmm, "worked");
 
-    auto f = p.pop();
-    if (f) {
-        std::cout << "poped function from the pool ";
-        f(0);
-    }
+    // JH: don't see the use for this
+    // auto f = pool.pop();
+    // if (f) {
+    //     std::cout << "poped function from the pool ";
+    //     f(0);
+    // }
+
     // change the number of treads in the pool
-
-    p.resize(1);
+    pool.resize(1);
 
     std::string s2 = "result";
-    auto f1 = p.push([s2](int){
+    auto f1 = pool.push([s2](int){
         return s2;
     });
     // other code here
     //...
     std::cout << "returned " << f1.get() << '\n';
 
-    auto f2 = p.push([](int){
+    auto f2 = pool.push([](int){
         throw std::exception();
     });
     // other code here
@@ -111,7 +118,7 @@ int main(int argc, char **argv) {
     }
 
     // get thread 0
-    auto & th = p.get_thread(0);
+    auto & th = pool.get_thread(0);
 
     return 0;
 }
