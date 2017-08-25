@@ -25,35 +25,28 @@ Features:
 
 Sample usage
 
-<code>void first(int id) {
+```C++
+void first(int id) {
     std::cout << "hello from " << id << '\n';
-}</code>
+}
 
-<code>&#32;&#32;struct Second {
+struct Second {
     void operator()(int id) const {
         std::cout << "hello from " << id << '\n';
     }
 } second;
 
-<code>void third(int id, const std::string & additional_param) {}</code>
+void third(int id, const std::string & additional_param) {}
 
-
-<code>int main () {</code>
-
-<code>&#32;&#32;&#32;&#32;ctpl::thread_pool p(2 /* two threads in the pool */);</code>
-
-<code>&#32;&#32;&#32;&#32;p.push(first);  // function</code>
-
-<code>&#32;&#32;&#32;&#32;p.push(third, "additional_param");</code>
-
-<code>&#32;&#32;&#32;&#32;p.push( &#91;&#93; (int id){
-  std::cout << "hello from " << id << '\n';
-});  // lambda</code>
-
-<code>&#32;&#32;&#32;&#32;p.push(std::ref(second));  // functor, reference</code>
-
-<code>&#32;&#32;&#32;&#32;p.push(const_cast&#60;const Second &&#62;(second));  // functor, copy ctor</code>
-
-<code>&#32;&#32;&#32;&#32;p.push(std::move(second));  // functor, move ctor</code>
-
-<code>}</code>
+int main () {
+    ctpl::thread_pool p(2 /* two threads in the pool */);
+    p.push(first);  // function
+    p.push(third, "additional_param");
+    p.push( [] (int id){
+        std::cout << "hello from " << id << '\n';
+    });  // lambda
+    p.push(std::ref(second));  // functor, reference
+    p.push(const_cast<const Second &>(second));  // functor, copy ctor
+    p.push(std::move(second));  // functor, move ctor
+}
+```
