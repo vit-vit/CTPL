@@ -85,6 +85,7 @@ namespace ctpl {
 
         // number of idle threads
         int n_idle() { return this->nWaiting; }
+        int n_pending() { return this->nPending; }
         std::thread & get_thread(int i) { return *this->threads[i]; }
 
         // change the number of threads in the pool
@@ -177,6 +178,7 @@ namespace ctpl {
             auto _f = new std::function<void(int id)>([pck](int id) {
                 (*pck)(id);
             });
+            ++this->nPending;
             this->q.push(_f);
             std::unique_lock<std::mutex> lock(this->mutex);
             this->cv.notify_one();
@@ -191,6 +193,7 @@ namespace ctpl {
             auto _f = new std::function<void(int id)>([pck](int id) {
                 (*pck)(id);
             });
+            ++this->nPending;
             this->q.push(_f);
             std::unique_lock<std::mutex> lock(this->mutex);
             this->cv.notify_one();
@@ -214,6 +217,7 @@ namespace ctpl {
                 bool isPop = this->q.pop(_f);
                 while (true) {
                     while (isPop) {  // if there is anything in the queue
+                        --this->nPending;
                         std::unique_ptr<std::function<void(int id)>> func(_f); // at return, delete the function even if an exception occurred
                         (*_f)(i);
                         if (_flag)
@@ -233,7 +237,7 @@ namespace ctpl {
             this->threads[i].reset(new std::thread(f)); // compiler may not support std::make_unique()
         }
 
-        void init() { this->nWaiting = 0; this->isStop = false; this->isDone = false; }
+        void init() { this->nWaiting = 0; this->nPending = 0; this->isStop = false; this->isDone = false; }
 
         std::vector<std::unique_ptr<std::thread>> threads;
         std::vector<std::shared_ptr<std::atomic<bool>>> flags;
@@ -241,6 +245,7 @@ namespace ctpl {
         std::atomic<bool> isDone;
         std::atomic<bool> isStop;
         std::atomic<int> nWaiting;  // how many threads are waiting
+        std::atomic<int> nPending;  // how many tasks are waiting
 
         std::mutex mutex;
         std::condition_variable cv;
