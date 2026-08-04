@@ -29,6 +29,7 @@
 #include <future>
 #include <mutex>
 #include <queue>
+#include <utility>
 
 
 
@@ -44,17 +45,17 @@ namespace ctpl {
         template <typename T>
         class Queue {
         public:
-            bool push(T const & value) {
+            bool push(T value) {
                 std::unique_lock<std::mutex> lock(this->mutex);
-                this->q.push(value);
+                this->q.push(std::move(value));
                 return true;
             }
-            // deletes the retrieved element, do not use for non integral types
+            // moves the retrieved element out of the queue
             bool pop(T & v) {
                 std::unique_lock<std::mutex> lock(this->mutex);
                 if (this->q.empty())
                     return false;
-                v = this->q.front();
+                v = std::move(this->q.front());
                 this->q.pop();
                 return true;
             }
@@ -120,19 +121,15 @@ namespace ctpl {
 
         // empty the queue
         void clear_queue() {
-            std::function<void(int id)> * _f;
-            while (this->q.pop(_f))
-                delete _f; // empty the queue
+            std::function<void(int)> f;
+            while (this->q.pop(f))
+                f = nullptr;
         }
 
         // pops a functional wrapper to the original function
         std::function<void(int)> pop() {
-            std::function<void(int id)> * _f = nullptr;
-            this->q.pop(_f);
-            std::unique_ptr<std::function<void(int id)>> func(_f); // at return, delete the function even if an exception occurred
             std::function<void(int)> f;
-            if (_f)
-                f = *_f;
+            this->q.pop(f);
             return f;
         }
 
@@ -162,8 +159,8 @@ namespace ctpl {
                     if (this->threads[i]->joinable())
                         this->threads[i]->join();
             }
-            // if there were no threads in the pool but some functors in the queue, the functors are not deleted by the threads
-            // therefore delete them here
+            // if there were no threads in the pool, queued functors were not consumed
+            // therefore clear them here
             this->clear_queue();
             this->threads.clear();
             this->flags.clear();
@@ -174,10 +171,10 @@ namespace ctpl {
             auto pck = std::make_shared<std::packaged_task<decltype(f(0, rest...))(int)>>(
                 std::bind(std::forward<F>(f), std::placeholders::_1, std::forward<Rest>(rest)...)
                 );
-            auto _f = new std::function<void(int id)>([pck](int id) {
+            std::function<void(int)> _f([pck](int id) {
                 (*pck)(id);
             });
-            this->q.push(_f);
+            this->q.push(std::move(_f));
             std::unique_lock<std::mutex> lock(this->mutex);
             this->cv.notify_one();
             return pck->get_future();
@@ -188,10 +185,10 @@ namespace ctpl {
         template<typename F>
         auto push(F && f) ->std::future<decltype(f(0))> {
             auto pck = std::make_shared<std::packaged_task<decltype(f(0))(int)>>(std::forward<F>(f));
-            auto _f = new std::function<void(int id)>([pck](int id) {
+            std::function<void(int)> _f([pck](int id) {
                 (*pck)(id);
             });
-            this->q.push(_f);
+            this->q.push(std::move(_f));
             std::unique_lock<std::mutex> lock(this->mutex);
             this->cv.notify_one();
             return pck->get_future();
@@ -210,16 +207,17 @@ namespace ctpl {
             std::shared_ptr<std::atomic<bool>> flag(this->flags[i]); // a copy of the shared ptr to the flag
             auto f = [this, i, flag/* a copy of the shared ptr to the flag */]() {
                 std::atomic<bool> & _flag = *flag;
-                std::function<void(int id)> * _f;
+                std::function<void(int)> _f;
                 bool isPop = this->q.pop(_f);
                 while (true) {
                     while (isPop) {  // if there is anything in the queue
-                        std::unique_ptr<std::function<void(int id)>> func(_f); // at return, delete the function even if an exception occurred
-                        (*_f)(i);
+                        _f(i);
                         if (_flag)
                             return;  // the thread is wanted to stop, return even if the queue is not empty yet
-                        else
+                        else {
+                            _f = nullptr;
                             isPop = this->q.pop(_f);
+                        }
                     }
                     // the queue is empty here, wait for the next command
                     std::unique_lock<std::mutex> lock(this->mutex);
@@ -237,7 +235,7 @@ namespace ctpl {
 
         std::vector<std::unique_ptr<std::thread>> threads;
         std::vector<std::shared_ptr<std::atomic<bool>>> flags;
-        detail::Queue<std::function<void(int id)> *> q;
+        detail::Queue<std::function<void(int)>> q;
         std::atomic<bool> isDone;
         std::atomic<bool> isStop;
         std::atomic<int> nWaiting;  // how many threads are waiting
